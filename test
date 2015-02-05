@@ -1,0 +1,101 @@
+#!/bin/bash
+declare -a g_m="";
+declare -a g_li="";
+
+function add_li() {
+	g_li+="<li><a href=\"javascript:loadJSON('$1', function(response) {var data = JSON.parse(response); document.getElementById('chartControls').innerHTML=data.chartControls; document.getElementById('tableContainer').innerHTML=data.table; chartM(data, 'Total');});\">$2</a></li>"
+}
+
+function add_sub() {
+	
+	g_m+="<li class=\"$1\">"
+	g_m+="<a class=\"$2\" href=\"$3\">$4</a>"
+	g_m+="<div class=\"mp-level\">"
+	g_m+="<h2>$5</h2>"
+	g_m+="<a class=\"mp-back\" href=\"#\">back</a>"
+	g_m+="<ul>"
+	g_m+="$g_li"
+	g_m+="</ul>"
+	g_m+="</div>"
+	g_m+="</li>"
+}
+
+tmpINDEX=tmpindex.html
+cp index.skel $tmpINDEX
+
+for id in "machine" "user"
+do
+	DATAFOLDER=./data/${id}/
+
+	for timeId in "Hour" "Day" "Week"
+	do
+		for f in "${DATAFOLDER}${timeId}_"*".data"
+		do
+			if [ -f $f ]
+			then
+				add_li $f $timeId
+			fi
+		done
+	done
+	g_m+="$g_li"
+	unset g_li
+	
+	#Month
+	for f in "${DATAFOLDER}Month_"*".data"
+	do
+		if [ -f $f ]
+		then
+			FILENAME=$(basename $f)
+			index=`expr index "$FILENAME" -`
+			add_li $f ${FILENAME:6:$index-7}
+		fi
+	done
+	for i in {1..12}
+	do
+		MONTHNAME=`date -d "$i/01" +%b`
+		for f in $DATAFOLDER"Month${MONTHNAME}"*".data"
+		do
+			if [ -f $f ]
+			then
+				FILENAME=$(basename $f)
+				index=`expr index "$FILENAME" -`
+				add_li $f ${FILENAME:5:$index-6}
+			fi
+		done
+	done
+	if [ -n "$g_li" ]
+	then
+		add_sub "icon icon-arrow-left" "icon icon-calendar" "#" "Month" "Month"
+		unset g_li
+	fi
+
+	#Year
+	for f in $DATAFOLDER"Year_"*".data"
+	do
+		if [ -f $f ]
+		then
+			FILENAME=$(basename $f)
+			index=`expr index "$FILENAME" -`
+			add_li $f ${FILENAME:5:$index-6}
+		fi
+	done
+	if [ -n "$g_li" ]
+	then
+		add_sub "icon icon-arrow-left" "icon icon-calendar" "#" "Year" "Year"
+		unset g_li
+	fi
+
+	if [ -z "$g_m" ]
+	then
+		g_m+="<li><a href=\"\">No data</a></li>"
+	fi
+
+	s=${g_m//[\/]/\\/}
+	sed -i -e "s/${id}_stats/$s/" $tmpINDEX
+	unset g_m
+done
+
+sed -i -e "s/ORGNAME/$ORGNAME/g" $tmpINDEX
+sed -i "s/CONDORADMIN/$CONDORADMIN/g" $tmpINDEX
+
+mv -f $tmpINDEX index.html

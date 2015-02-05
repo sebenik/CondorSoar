@@ -1,0 +1,5 @@
+# Ignore in this directory
+*.html
+*.old
+cronentries
+

@@ -1,0 +1,161 @@
+#!/bin/bash
+
+### CUSTOMIZE THE BELOW SETTINGS #######################
+
+# Set ORGNAME to be a very brief name to identify your organization,
+# for example "Univ of Wisconsin".  Do not use any 
+# slashes in the name or other special regular-expression characters
+# , i.e. avoid characters like: / \ ^ $ .
+ORGNAME="zsebenik"
+
+# Set CONDORADMIN to be the email address of the Condor Administrator
+# at your site.
+CONDORADMIN="zsebenik@fgg.uni-lj.si"
+
+# Set POOL to the hostname of the machine running the Condor
+# Collector with history statistics enabled.
+POOL=127.0.0.1
+
+# Set VIEWDIR to be the directory where you unpacked Java CondorView.
+# It is likely to be the directory where this file you are now editing
+# is located.
+VIEWDIR="/home/sebenik/Projects/www/condor_view"
+
+# Set STATSDIR to be the _directory_ which contains the condor_stats
+# binary.
+STATSDIR="/usr/bin"
+
+# Set PATH so it includes the directories which contain awk, bc, 
+# sed, date, and condor_stats.  If you have perl installed, 
+# set the path to include the directory with perl as well.
+PATH=/bin:/usr/bin:$STATSDIR:/s/std/bin
+
+########### END OF CUSTOMIZATION #######################
+
+# No need to edit anything below unless you know what you are doing.
+
+export POOL
+export VIEWDIR
+export PATH
+
+cd $VIEWDIR
+
+if [ $# -eq 0 ]; then
+	./make_machine_stats hour
+	./make_machine_stats day
+	./make_machine_stats week
+	./make_machine_stats month
+	./make_user_stats hour
+	./make_user_stats day
+	./make_user_stats week
+	./make_user_stats month
+	. ./test
+	exit 0
+fi
+
+if [ "$1" = "setup" ] 
+	then
+
+		# Do initial setup
+
+		for FILE in index
+		do
+			mv -f $FILE.html $FILE.html.old 1>/dev/null 2>&1
+			cat $FILE.skel | sed s/CONDORADMIN/"$CONDORADMIN"/g | \
+				sed s/ORGNAME/"$ORGNAME"/g > $FILE.html
+			chmod 644 $FILE.html
+		done
+
+		for FILE in footer-html footer-user-html header-html header-user-html no-data
+		do
+			mv -f $FILE.html $FILE.html.old 1>/dev/null 2>&1
+			cat $FILE.skel | sed s/CONDORADMIN/"$CONDORADMIN"/g | \
+				sed s/ORGNAME/"$ORGNAME"/g > ./html/$FILE.html
+			chmod 644 ./html/$FILE.html
+		done
+
+		mv -f cronentries cronentries.old 1>/dev/null 2>&1
+		cat cronentries.skel | sed s@VIEWDIR@"$VIEWDIR"@g > cronentries
+		chmod 644 cronentries
+
+		cp ./html/no-data.html ./html/Jan.html 
+		cp ./html/no-data.html ./html/Feb.html 
+		cp ./html/no-data.html ./html/Mar.html 
+		cp ./html/no-data.html ./html/Apr.html 
+		cp ./html/no-data.html ./html/May.html 
+		cp ./html/no-data.html ./html/Jun.html 
+		cp ./html/no-data.html ./html/Jul.html 
+		cp ./html/no-data.html ./html/Aug.html 
+		cp ./html/no-data.html ./html/Sep.html 
+		cp ./html/no-data.html ./html/Oct.html 
+		cp ./html/no-data.html ./html/Nov.html 
+		cp ./html/no-data.html ./html/Dec.html
+		cp ./html/no-data.html ./html/UserJan.html 
+		cp ./html/no-data.html ./html/UserFeb.html 
+		cp ./html/no-data.html ./html/UserMar.html 
+		cp ./html/no-data.html ./html/UserApr.html 
+		cp ./html/no-data.html ./html/UserMay.html 
+		cp ./html/no-data.html ./html/UserJun.html 
+		cp ./html/no-data.html ./html/UserJul.html 
+		cp ./html/no-data.html ./html/UserAug.html 
+		cp ./html/no-data.html ./html/UserSep.html 
+		cp ./html/no-data.html ./html/UserOct.html 
+		cp ./html/no-data.html ./html/UserNov.html 
+		cp ./html/no-data.html ./html/UserDec.html
+		cp ./html/no-data.html ./html/Hour.html
+		cp ./html/no-data.html ./html/Day.html
+		cp ./html/no-data.html ./html/Week.html
+		cp ./html/no-data.html ./html/Month.html
+		cp ./html/no-data.html ./html/thisYear.html
+		cp ./html/no-data.html ./html/lastYear.html
+		cp ./html/no-data.html ./html/UserHour.html
+		cp ./html/no-data.html ./html/UserDay.html
+		cp ./html/no-data.html ./html/UserWeek.html
+		cp ./html/no-data.html ./html/UserMonth.html
+		cp ./html/no-data.html ./html/UserThisYear.html
+		cp ./html/no-data.html ./html/UserLastYear.html
+
+		echo Jan
+		./make_stats from 1 1 1999 to 2 1 1999 Jan
+		echo Feb
+		./make_stats from 2 1 1999 to 3 1 1999 Feb
+		echo Mar
+		./make_stats from 3 1 1999 to 4 1 1999 Mar
+		echo Apr
+		./make_stats from 4 1 1998 to 5 1 1998 Apr
+		echo May
+		./make_stats from 5 1 1998 to 6 1 1998 May
+		echo Jun
+		./make_stats from 6 1 1998 to 7 1 1998 Jun
+		echo Jul
+		./make_stats from 7 1 1998 to 8 1 1998 Jul
+		echo Aug
+		./make_stats from 8 1 1998 to 9 1 1998 Aug
+		echo Sep
+		./make_stats from 9 1 1998 to 10 1 1998 Sep
+		echo Oct
+		./make_stats from 10 1 1998 to 11 1 1998 Oct
+		echo Nov
+		./make_stats from 11 1 1998 to 12 1 1998 Nov
+		echo Dec
+		./make_stats from 12 1 1998 to 1 1 1999 Dec
+		echo Past Hour
+		./make_stats hour
+		echo Past Day
+		./make_stats day
+		echo Past Week
+		./make_stats week
+		echo Past Month
+		./make_stats month
+		echo This Year
+		./make_stats thisyear
+		echo Last Year
+		./make_stats lastyear
+else
+		# Run the scripts which update the html and data files
+		./make_machine_stats $*
+		./make_user_stats $*
+		. ./test
+fi
+
+exit 0

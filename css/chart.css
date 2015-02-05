@@ -1,0 +1,169 @@
+#chartControls {
+	margin-top: 40px;
+}
+#chartControls:after {
+	content: " ";
+	display: block;
+	clear: both;
+}
+#controlsLeft {
+	float: left;
+}
+#controlsRight {
+	float: right;
+}
+#chartContainer {
+	margin: 5px 0px;
+	border: 1px solid #fff;
+}
+
+.checkbox {
+display: inline-block;
+cursor: pointer;
+font-size: 13px; margin-right:10px; line-height:18px;
+}
+input[type=checkbox] {
+display:none;
+}
+.checkbox:before {
+content: "";
+display: inline-block;
+width: 18px;
+height: 18px;
+vertical-align:middle;
+color: #f3f3f3;
+text-align: center;
+box-shadow: inset 0px 2px 3px 0px rgba(0, 0, 0, .3), 0px 1px 0px 0px rgba(255, 255, 255, .8);
+border-radius: 3px;
+}
+input[type=checkbox]:checked + .checkbox:before {
+content: "\2713";
+text-shadow: 1px 1px 1px rgba(0, 0, 0, .2);
+font-size: 15px;
+}
+
+#controlsLeft .rb_label {
+	margin: 0 5px;
+}
+
+#controlsRight #lbl_drained:before {
+	background-color: #ff8310;
+	margin-right: 10px;
+}
+#controlsRight #lbl_idle:before {
+	background-color: #4176d7;
+	margin-right: 10px;
+}
+#controlsRight #lbl_condor:before {
+	background-color: #00aa61;
+	margin-right: 10px;
+}
+#controlsRight #lbl_owner:before {
+	background-color: #b9121b;
+	margin-right: 10px;
+}
+#controlsRight #lbl_backfill:before {
+	background-color: #fb00bc;
+	margin-right: 10px;
+}
+#controlsRight #lbl_jobsRunning:before {
+	background-color: #b9121b;
+	margin-right: 10px;
+}
+#controlsRight #lbl_jobsIdle:before {
+	background-color: #4176d7;
+	margin-right: 10px;
+}
+div#chart {
+	width: 99%;
+	margin-bottom: 40px;
+}
+
+.cTitle {
+	fill: #ffffff;
+}
+#chartSubTitle1, #chartSubTitle2 {
+	text-anchor: start;
+	font-size: .75em;
+}
+
+#yAxisLegend {
+	text-anchor: end;
+	fill: #efecca;
+}
+
+.brush .extent {
+	stroke: #e6e2af;
+	fill-opacity: .375;
+	shape-rendering: crispEdges;
+}
+
+.grid .tick {
+	stroke: lightgrey;
+	stroke-opacity: 0.7;
+	shape-rendering: crispEdges;
+}
+.grid path {
+	stroke-width: 0;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+.tick text {
+	fill: white;
+}
+
+.area {
+  clip-path: url(#clip);
+  stroke-width: 1;
+}
+.area.TotalCondor {
+  fill: #00aa61;
+  opacity: 0.8;
+}
+.area.TotalIdle {
+  fill: #4176d7;
+  opacity: 0.8;
+}
+.area.TotalDrained {
+  fill: #ff8310;
+  opacity: 0.8;
+}
+.area.TotalBackfill {
+  fill: #fb00bc;
+  opacity: 0.8;
+}
+.area.TotalOwner {
+  fill: #b9121b;
+  opacity: 0.8;
+}
+
+/*USER*/
+.area.TotalJobsRunning {
+  fill: #b9121b;
+  opacity: 0.8;
+}
+.area.TotalJobsIdle {
+  fill: #4176d7;
+  opacity: 0.8;
+}
+
+
+.loader{
+  height: 100px;
+  width: 10%;
+  text-align: center;
+  padding: 1em;
+  margin: 0 45%;
+  display: inline-block;
+  vertical-align: top;
+}
+
+#loader path,
+#loader rect {
+	fill: #e6e2af;
+}

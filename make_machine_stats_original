@@ -1,0 +1,223 @@
+#!/bin/sh
+
+USAGE="Usage: make_machine_stats < hour | day | week | month | from (mon) (day) (year) to (mon) (day) (year) filename >"
+
+LENGTH="-last$1"
+
+case $1 in
+	day)
+		DATARESOLUTION=0
+		LABELNAME="Day"
+		FILENAME="Day"
+		MINTOEXPIRE=60
+		;;
+	week)
+		DATARESOLUTION=8
+		LABELNAME="Week"
+		FILENAME="Week"
+		MINTOEXPIRE=420
+		;;
+	month)
+		MINTOEXPIRE=1440
+		THISMONTH=`date +%m`
+		THENEXTMONTH=`echo "$THISMONTH + 1" | bc`
+		THISYEAR=`date +%Y`
+		TOYEAR=$THISYEAR
+		if [ "$THENEXTMONTH" = "13" ]
+			then
+				TOYEAR=`echo "$THISYEAR + 1" | bc`
+				THENEXTMONTH=1
+		fi
+		OUTFILE=`date +%b`
+		# echo "CALLING: make_machine_stats from $THISMONTH 1 $THISYEAR to $THENEXTMONTH 1 $TOYEAR $OUTFILE"
+		eval "./make_machine_stats from $THISMONTH 1 $THISYEAR to $THENEXTMONTH 1 $TOYEAR $OUTFILE"
+		DATARESOLUTION=4
+		LABELNAME="Month"
+		FILENAME="Month"
+		;;
+	hour)
+		MINTOEXPIRE=15
+		DATARESOLUTION=0
+		LENGTH="-lasthours 1"
+		LABELNAME="Hour"
+		FILENAME="Hour"
+		;;
+	from)
+		MINTOEXPIRE=525600
+		if [ $# != 9 -o $5 != "to" ]
+			then
+				echo $USAGE
+				exit 1
+		fi
+		DATARESOLUTION=4
+		FROMMON=$2
+		FROMDAY=$3
+		FROMYEAR=$4
+		TOMON=$6
+		TODAY=$7
+		TOYEAR=$8
+		FILENAME=$9
+		LENGTH="-from $2 $3 $4 -to $6 $7 $8"
+		LABELNAME=$FILENAME
+		;;
+	*)
+		echo $USAGE
+		exit 1
+		;;
+esac
+
+RESGROUPS=`condor_stats -pool $POOL $LENGTH -resgrouplist 2>/dev/null`
+if [ "$RESGROUPS" = "No Data." -o $? = "1" ]
+	then
+		exit 0
+fi
+DATAFILENAME=$FILENAME-`date +%m%d%y%H%M%S`
+
+touch /tmp/cvw.$$
+STATFILE="/tmp/vwstats.$$"
+HEADER="FORMAT"
+for group in $RESGROUPS
+do
+	condor_stats -pool $POOL $LENGTH -orgformat -resgroupquery $group >> /tmp/cvw.$$
+        HEADER="$HEADER $group Owner Idle Condor Backfill Drained"
+done
+
+# bgietzel (041107) - The line below where we set $11 to 0 is a workaround for a bug
+# fixed in Condor version 6.8.4 where the backfill numbers are not zeroed correctly.
+# This results in abnormally large values for backfill and breaks the applet display.
+
+#echo `echo $HEADER | sed 's/\//-/g'` > $1.$$
+(echo $STATFILE; cat /tmp/cvw.$$) | awk \
+'BEGIN { SEP=" A "; numarch=0 }
+{ if ( NR == 1 ) {
+      statfile = $1
+  } else {
+  if ( arch != $2 ) {
+  	  alltimes[$1]=1
+	  arch=$2
+	  archnames[numarch]=arch
+	  numarch++
+	  for (atime in alltimes) {
+            archdata[arch SEP atime]="0,0,0,0,0"
+	  }
+	  lasttime=0
+  }
+  alltimes[$1]=1
+  if ($11 > 1000000) {
+      $11 = 0;
+  }
+  archdata[arch SEP $1]=sprintf("%.1f,%.1f,%.1f,%.1f,%.1f",$8,$4+$5+$7,$6,$11,$12)
+  if ( lasttime > 0 ) {
+  	  total = $4 + $5 + $6 + $7 + $8 + $11 + $12
+	  secs = $1 - lasttime
+	  if ( (secs - lastsecs > 120) && (lastsecs != 0) ) {
+	  	total = 0
+	  }
+	  lastsecs = secs
+	  if ( total > 0 ) {
+             archavetot[arch] += secs
+		 ownerper = ($8 / total) * 100
+		 claimedper = ($6 / total) * 100
+		 backfillper = ($11 / total) * 100
+		 drainedper = ($12 / total) * 100
+	     archrawowner[arch] += $8 * secs
+	     archrawclaimed[arch] += $6 * secs
+	     archrawbackfill[arch] += $11 * secs
+	     archrawdrained[arch] += $12 * secs
+		 archrawunclaimed[arch] += (total - $6 - $8 - $11) * secs
+	     archaveowner[arch] += ownerper * secs
+	     archaveclaimed[arch] += claimedper * secs
+	     archavebackfill[arch] += backfillper * secs
+	     archavedrained[arch] += drainedper * secs
+		 if ( archrawpeakowner[arch] < $8 ) {
+		    archrawpeakowner[arch] = $8
+		 }
+		 if ( archrawpeakclaimed[arch] < $6 ) {
+		    archrawpeakclaimed[arch] = $6
+		 }
+                 if ( archrawpeakbackfill[arch] < $11 ) {
+                    archrawpeakbackfill[arch] = $11
+                 }
+                 if ( archrawpeakdrained[arch] < $12 ) {
+                    archrawpeakdrained[arch] = $12
+                 }
+		 if ( archpeakowner[arch] < ownerper ) {
+		    archpeakowner[arch] = ownerper
+		 }
+		 if ( archpeakclaimed[arch] < claimedper ) {
+		    archpeakclaimed[arch] = claimedper
+		 }
+	  }
+  }
+  lasttime=$1
+  }
+}
+END { 
+  for (i=0; i<numarch; i++) {
+  	 j=archnames[i]
+	 if ( archavetot[j] > 0 ) {
+	 ownerraw = archrawowner[j] / archavetot[j]
+	 claimedraw = archrawclaimed[j] / archavetot[j]
+	 unclaimedraw = archrawunclaimed[j] / archavetot[j]
+	 backfillraw = archrawbackfill[j] / archavetot[j]
+	 drainedraw = archrawdrained[j] / archavetot[j]
+	 ownerp = archaveowner[j] / archavetot[j]
+	 claimedp = archaveclaimed[j] / archavetot[j]
+	 backfillp = archavebackfill[j] / archavetot[j]
+	 drainedp = archavedrained[j] / archavetot[j]
+	 shadecount++
+	 if ( shadecount % 2 < 1 ) {
+	    shade=" "
+	 } else {
+	    shade="bgcolor=#DDDDDD"
+	 }
+     printf"<tr %s><td><a href=javascript:set_graphs(\"%s\")>%s</a>",shade, j, j > statfile
+     printf"</td><td align=center>%.1f<br>(%.1f%%)</td><td align=center>%.1f<br>(%.1f%%)</td><td align=center>%.1f<br>(%.1f%%)</td><td align=center>%.1f<br>(%.1f%%)</td><td align=center>%.1f<br>(%.1f%%)</td>",ownerraw, ownerp, claimedraw, claimedp, unclaimedraw, 100 - ownerp - claimedp - backfillp - drainedp, backfillraw, backfillp, drainedraw, drainedp > statfile
+     printf"<td align=center>%d<br>(%d%%)</td><td align=center>%d<br>(%d%%)</td></tr>\n", archrawpeakowner[j], archpeakowner[j], archrawpeakclaimed[j], archpeakclaimed[j] > statfile
+	 }
+  }
+  for (atime in alltimes) {
+	 printf"%s",atime
+	 for (i = 0; i < numarch; i++) {
+		printf" %s",archdata[archnames[i] SEP atime]
+	 }
+	 printf"\n"
+  }
+}' - | sort -n | (echo $DATARESOLUTION; cat -) | awk \
+'{ if ( NR == 1 ) {
+    resolution=$1
+  } else {
+    if ( resolution > 0 ) {
+      if ( NR % resolution == 0 ) {
+	    print $0 
+      }
+    } else {
+	  print $0
+	}
+  }
+}' - >> $1.$$
+rm -f /tmp/cvw.$$
+
+mv -f $FILENAME*.data $FILENAME.data.old 1> /dev/null 2>&1
+mv -f $1.$$ $DATAFILENAME.data
+
+chmod 644 $DATAFILENAME.data
+
+EXPIRE=`perl addtime.pl $MINTOEXPIRE 2>/dev/null`
+if [ $? = "1" ]
+	then
+		EXPIRE="!Expire cannot be computed without Perl"
+	else
+		EXPIRE=`echo 'META HTTP-EQUIV="Expires" CONTENT="'$EXPIRE'"'`
+fi
+
+(sed s/PERIOD/"$LABELNAME"/g header-html.html | \
+ sed s/DATAFILENAME/"$DATAFILENAME"/ | \
+ sed s/\!Expire/"$EXPIRE"/ ; cat $STATFILE; 
+ sed s/PERIOD/"$LABELNAME"/g footer-html.html) > $1.html.$$
+rm -f $STATFILE
+
+mv -f $FILENAME.html $FILENAME.html.old > /dev/null 2>&1
+mv -f $1.html.$$ $FILENAME.html
+
+chmod 644 $FILENAME.html
