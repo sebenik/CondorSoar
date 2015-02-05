@@ -1,4 +1,0 @@
-0,15,30,45 * * * * VIEWDIR/make_stats hour >/dev/null 2>&1
-10 * * * * VIEWDIR/make_stats day >/dev/null 2>&1
-17 5,12 * * * VIEWDIR/make_stats week >/dev/null 2>&1
-55 23 * * * VIEWDIR/make_stats month >/dev/null 2>&1
