@@ -5,18 +5,17 @@ USAGE="Usage: make_user_stats < hour | day | week | month | year | from (mon) (d
 LENGTH="-last$1"
 
 case $1 in
+	hour)
+		LENGTH="-lasthours 1"
+		FILENAME="Hour_"
+		;;
 	day)
-		LABELNAME="Day"
 		FILENAME="Day_"
-		MINTOEXPIRE=60
 		;;
 	week)
-		LABELNAME="Week"
 		FILENAME="Week_"
-		MINTOEXPIRE=420
 		;;
 	month)
-		MINTOEXPIRE=1440
 		case $2 in 
 			[1-9]|1[0-2])
 				THISMONTH="$2" ;;
@@ -34,7 +33,6 @@ case $1 in
 		OUTFILE=`date -d "$THISMONTH/01" +%b`
 		# echo "CALLING: make_user_stats from $THISMONTH 1 $THISYEAR to $THENEXTMONTH 1 $TOYEAR $OUTFILE"
 		eval "./make_user_stats from $THISMONTH 1 $THISYEAR to $THENEXTMONTH 1 $TOYEAR Month$OUTFILE"
-		LABELNAME="MonthCurrent"
 		FILENAME="Month_Current"
 		;;
 	year)
@@ -49,14 +47,7 @@ case $1 in
 		eval "./make_user_stats from 1 1 $THISYEAR to 1 1 $TOYEAR $OUTFILE"
 		exit
 		;;
-	hour)
-		MINTOEXPIRE=15
-		LENGTH="-lasthours 1"
-		LABELNAME="Hour"
-		FILENAME="Hour_"
-		;;
 	from)
-		MINTOEXPIRE=525600
 		if [ $# != 9 -o $5 != "to" ]
 			then
 				echo $USAGE
@@ -68,9 +59,8 @@ case $1 in
 		TOMON=$6
 		TODAY=$7
 		TOYEAR=$8
-		LENGTH="-from $2 $3 $4 -to $6 $7 $8"
-		LABELNAME=$9
 		FILENAME=$9
+		LENGTH="-from $2 $3 $4 -to $6 $7 $8"
 		;;
 	*)
 		echo $USAGE
@@ -92,17 +82,12 @@ RESGROUPS="Total $RESGROUPS"
 DATAFILENAME=$FILENAME-`date +%m%d%y%H%M%S`
 
 touch /tmp/cvw.$$
-STATFILE="/tmp/vwstats.$$"
-HEADER="FORMAT"
 for group in $RESGROUPS
 do
 	condor_stats -pool $POOL $LENGTH -orgformat -usergroupquery $group >> /tmp/cvw.$$
-	HEADER="$HEADER $group JobsRunning JobsIdle"
 done
 
-
-#echo `echo $HEADER | sed 's/\//-/g'` > $1.$$
-(echo $STATFILE; cat /tmp/cvw.$$) | gawk \
+(cat /tmp/cvw.$$) | awk \
 'BEGIN { SEP=" A "; numarch=0 }
 { if ( NR == 1 ) {
       statfile = $1
@@ -171,16 +156,16 @@ END {
 			class = "class=\\\"odd\\\""
 		 }
 		 split(j,arr,"@")
-		 table = table sprintf("<tr %s><td><a href=javascript:chartM.updateChart(\\\"%s\\\");>%s<\\/a>",class, j, arr[1])
-		 table = table sprintf("<br><font size=-1>%s<\\/font><\\/td><td align=center>%.1f<\\/td><td align=center>%.1f<br>(%.1f%%)<\\/td>", arr[2], hoursused, ownerraw, ownerp)
-		 table = table sprintf("<td align=center>%.1f<br>(%.1f%%)<\\/td><td align=center>%.1f<br>(%.1f%%)<\\/td><td align=center>%.1f<br>(%.1f%%)<\\/td><\\/tr>", claimedraw, claimedp, archrawpeakowner[j], archpeakowner[j], archrawpeakclaimed[j], archpeakclaimed[j])
-
-		 printf"<tr %s><td><a href=javascript:chartM.updateChart(\"%s\");>%s</a>",class, j, arr[1] > statfile
-		 printf"<br><font size=-1>%s</font></td><td align=center>%.1f</td><td align=center>%.1f<br>(%.1f%%)</td>", arr[2], hoursused, ownerraw, ownerp  > statfile
-		 printf"<td align=center>%.1f<br>(%.1f%%)</td><td align=center>%.1f<br>(%.1f%%)</td><td align=center>%.1f<br>(%.1f%%)</td></tr>\n", claimedraw, claimedp, archrawpeakowner[j], archpeakowner[j], archrawpeakclaimed[j], archpeakclaimed[j] > statfile
+		 table = table sprintf("<tr %s><td><a href=javascript:chartM.updateChart(\\\"%s\\\");>%s<\\/a>", \
+				 class, j, arr[1])
+		 table = table sprintf("<br><font size=-1>%s<\\/font><\\/td><td align=center>%.1f<\\/td><td align=center>%.1f<br>(%.1f%%)<\\/td>", \
+				 arr[2], hoursused, ownerraw, ownerp)
+		 table = table sprintf("<td align=center>%.1f<br>(%.1f%%)<\\/td><td align=center>%.1f<br>(%.1f%%)<\\/td><td align=center>%.1f<br>(%.1f%%)<\\/td><\\/tr>", \
+				 claimedraw, claimedp, archrawpeakowner[j], archpeakowner[j], archrawpeakclaimed[j], archpeakclaimed[j])
 	 }
 
-	 j_misc[i] = sprintf("\"misc\":{\"user\":\"%s\",\"hused\":%.1f,\"jra\":%.1f,\"jrap\":%.1f,\"jia\":%.1f,\"jiap\":%.1f,\"jrp\":%.1f,\"jrpp\":%.1f,\"jip\":%.1f,\"jipp\":%.1f}", j,hoursused,ownerraw,ownerp,claimedraw,claimedp,archrawpeakowner[j],archpeakowner[j],archrawpeakclaimed[j],archpeakclaimed[j])
+	 j_misc[i] = sprintf("\"misc\":{\"user\":\"%s\",\"hused\":%.1f,\"jra\":%.1f,\"jrap\":%.1f,\"jia\":%.1f,\"jiap\":%.1f,\"jrp\":%.1f,\"jrpp\":%.1f,\"jip\":%.1f,\"jipp\":%.1f}", \
+			 j,hoursused,ownerraw,ownerp,claimedraw,claimedp,archrawpeakowner[j],archpeakowner[j],archrawpeakclaimed[j],archpeakclaimed[j])
   }
 
   	j_chartConstols = "\"chartControls\":\"<div id=\\\"controlsLeft\\\">Display series as:<form id=\\\"form_series_display\\\"><input type=\\\"radio\\\" name=\\\"stacked\\\" id=\\\"rbs_yes\\\" value=\\\"Stacked\\\" checked onclick=\\\"chartM.updateChart()\\\" /><label for=\\\"rbs_yes\\\" id=\\\"lbl_stacked\\\" class=\\\"rb_label\\\">Stacked</label><input type=\\\"radio\\\" name=\\\"stacked\\\" id=\\\"rbs_no\\\" value=\\\"Unstacked\\\" onclick=\\\"chartM.updateChart()\\\"/><label for=\\\"rbs_no\\\" id=\\\"lbl_unstacked\\\" class=\\\"rb_label\\\">Unstacked</label></form></div><div id=\\\"controlsRight\\\">Series:<form id=\\\"form_series\\\"><input type=\\\"checkbox\\\" name=\\\"to\\\" id=\\\"cb_jobsRunning\\\" value=\\\"running\\\" checked onclick=\\\"chartM.updateChart()\\\" /><label for=\\\"cb_jobsRunning\\\" class=\\\"checkbox\\\" id=\\\"lbl_jobsRunning\\\">Total Jobs Running</label><input type=\\\"checkbox\\\" name=\\\"to\\\" id=\\\"cb_jobsIdle\\\" value=\\\"idle\\\" checked onclick=\\\"chartM.updateChart()\\\" /><label for=\\\"cb_jobsIdle\\\" class=\\\"checkbox\\\" id=\\\"lbl_jobsIdle\\\">Total Jobs Idle</label></form></div>\""
@@ -242,24 +227,3 @@ mv -f $DATAFOLDER$FILENAME*.data $DATAFOLDER$FILENAME.data.old 1> /dev/null 2>&1
 mv -f $1.$$ $DATAFOLDER$DATAFILENAME.data
 
 chmod 644 $DATAFOLDER$DATAFILENAME.data
-
-
-EXPIRE=`perl addtime.pl $MINTOEXPIRE 2>/dev/null`
-if [ $? = "1" ]
-	then
-		EXPIRE="!Expire cannot be computed without Perl"
-	else
-		EXPIRE=`echo 'META HTTP-EQUIV="Expires" CONTENT="'$EXPIRE'"'`
-fi
-
-(sed s/PERIOD/"$LABELNAME"/g ./html/header-user-html.html | \
- sed s/DATAFILENAME/"$DATAFILENAME"/ | \
- sed s/\!Expire/"$EXPIRE"/ ; cat $STATFILE; 
- sed s/PERIOD/"$LABELNAME"/g ./html/footer-user-html.html | \
- sed s/ARCH/"Total"/ ) > $1.html.$$
-rm -f $STATFILE
-
-mv -f ./html/$FILENAME.html ./html/$FILENAME.html.old > /dev/null 2>&1
-mv -f $1.html.$$ ./html/$FILENAME.html
-
-chmod 644 ./html/$FILENAME.html
