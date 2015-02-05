@@ -11,7 +11,7 @@ html, body, .container, .scroller {
 }
 
 .scroller {
-	overflow-y: visible;
+	overflow-y: scroll;
 }
 
 .scroller,
