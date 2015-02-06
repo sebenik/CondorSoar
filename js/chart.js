@@ -163,7 +163,7 @@ function chartM(data, arch) {
 			})
 		});
 
-		y.domain([0, Math.ceil(maxY/10)*10]);
+		y.domain([0, ceil(maxY, 10)]);
 		yOverview.domain(y.domain());
 
 		main.select(".y.axis").transition().duration(moveDuration).call(yAxis);
@@ -241,8 +241,7 @@ function chartM(data, arch) {
 			arcChart.update("arc_ja", data.arch[arch].misc.jrap/100, data.arch[arch].misc.jiap/100);
 			arcChart.update("arc_jrp", data.arch[arch].misc.jrpp/100);
 			arcChart.update("arc_jip", data.arch[arch].misc.jipp/100);
-		}catch(e) {
-		}
+		}catch(e) {}
 		
 		} //update
 
@@ -327,6 +326,15 @@ function chartM(data, arch) {
 		}
 		cb();
 	} //defineAreas
+
+	function ceil(value, ceil) {
+		if(value % ceil === 0) {
+			return value + ceil;
+		}
+		else {
+			return Math.ceil(value/ceil)*ceil;
+		}
+	}
 	
 	function zip() {
 	    var args = [].slice.call(arguments);
@@ -350,126 +358,5 @@ function chartM(data, arch) {
 			.scale(y)
 			.orient("left");
 	} //make_y_axis
-
-
-function arcChart(id, firstValue, secondValue){
-arcChart.update = updateArc;
-var two = true;
-if(secondValue === undefined) two = false;
-document.getElementById(id).innerHTML = "";
-
-var tau = 2 * Math.PI;
-
-var arc = d3.svg.arc()
-    .innerRadius(heightArch/2 - 8)
-    .outerRadius(heightArch/2 - 2)
-    .startAngle(0);
-var arc1 = d3.svg.arc()
-    .innerRadius(heightArch/2 - 10)
-    .outerRadius(heightArch/2)
-    .startAngle(0);
-
-var svg = d3.select("#"+id).append("svg")
-    .attr("width", widthArch)
-    .attr("height", heightArch)
-  .append("g")
-    .attr("transform", "translate(" + widthArch / 2 + "," + heightArch / 2 + ")")
-
-var background = svg.append("path")
-    .datum({endAngle: tau})
-    .style("fill", "#ddd")
-    .attr("d", arc1);
-
-var textSize = 17;
-var foregroundRunning = svg.append("path")
-	.attr("id","foreground1")
-    .datum({endAngle: 0 * tau})
-    .style("fill", "red")
-    .attr("d", arc);
-var perTextRunning = svg.append("text")
-	.attr("id","text1")
-    .datum({endAngle: 0 * tau})
-    .style("fill", "red")
-    .style("font-size", textSize + "px")
-	.attr("text-anchor","middle")
-	.attr("y",textSize/2)
-	.attr("dy",function(){if(two) return "0.5em"})
-    .text("0 %");
-	foregroundRunning.transition()
-	      .duration(moveDuration)
-	      .call(arcTween, firstValue * tau);
-	perTextRunning.transition()
-	      .duration(moveDuration)
-	      .call(textTween, firstValue * tau);
-
-if(two) {
-	var foregroundIdle = svg.append("path")
-		.attr("id","foreground2")
-	    .datum({endAngle: 0 * tau})
-	    .style("fill", "blue")
-	    .attr("d", arc);
-	var perTextIdle = svg.append("text")
-		.attr("id","text2")
-	    .datum({endAngle: 0 * tau})
-	    .style("fill", "blue")
-	    .style("font-size", textSize + "px")
-		.attr("text-anchor","middle")
-		.attr("y",-textSize/2)
-	    .text("0 %");
-	foregroundIdle.transition()
-	      .duration(moveDuration)
-	      .call(arcTween, -secondValue * tau);
-	perTextIdle.transition()
-	      .duration(moveDuration)
-	      .call(textTween, secondValue * tau);
-
-}
-
-// Creates a tween on the specified transition's "d" attribute, transitioning
-// any selected arcs from their current angle to the specified new angle.
-function arcTween(transition, newAngle) {
-  transition.attrTween("d", function(d) {
-    var interpolate = d3.interpolate(d.endAngle, newAngle);
-    return function(t) {
-      d.endAngle = interpolate(t);
-      return arc(d);
-    };
-  });
-}
-function textTween(transition, newAngle) {
-  transition.tween("text", function(d) {
-    var interpolate = d3.interpolate(d.endAngle, newAngle);
-    return function(t) {
-      d.endAngle = interpolate(t);
-      this.textContent = Math.round(interpolate(t)/tau*10000)/100 + " %";
-    };
-  });
-}
-
-function updateArc(id, firstValue, secondValue)
-{
-	var two = true;
-	if(secondValue === undefined) two = false;
-
-var svg = d3.select("#"+id);
-
-	svg.select("#foreground1").transition()
-	      .duration(moveDuration)
-	      .call(arcTween, firstValue * tau);
-	svg.select("#text1").transition()
-	      .duration(moveDuration)
-	      .call(textTween, firstValue * tau);
-	if(two) {
-		svg.select("#foreground2").transition()
-		      .duration(moveDuration)
-		      .call(arcTween, -secondValue * tau);
-		svg.select("#text2").transition()
-		      .duration(moveDuration)
-		      .call(textTween, secondValue * tau);
-	}
-} //updateArc
-
-} //arcChart
-
 
 } //chartM
