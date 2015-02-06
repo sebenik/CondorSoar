@@ -7,17 +7,12 @@ function add_li() {
 }
 
 function add_sub() {
-	
 	g_m+="<li class=\"$1\">"
 	g_m+="<a class=\"$2\" href=\"$3\">$4</a>"
 	g_m+="<div class=\"mp-level\">"
 	g_m+="<h2>$5</h2>"
 	g_m+="<a class=\"mp-back\" href=\"#\">back</a>"
-	g_m+="<ul>"
-	g_m+="$g_li"
-	g_m+="</ul>"
-	g_m+="</div>"
-	g_m+="</li>"
+	g_m+="<ul>${g_li}</ul><div></li>"
 }
 
 tmpINDEX=tmpindex.html
@@ -95,6 +90,7 @@ do
 	unset g_m
 done
 
+ORGNAME=${ORGNAME//[\/]/\\/}
 sed -i -e "s/ORGNAME/$ORGNAME/g" $tmpINDEX
 sed -i "s/CONDORADMIN/$CONDORADMIN/g" $tmpINDEX
 

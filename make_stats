@@ -3,9 +3,7 @@
 ### CUSTOMIZE THE BELOW SETTINGS #######################
 
 # Set ORGNAME to be a very brief name to identify your organization,
-# for example "Univ of Wisconsin".  Do not use any 
-# slashes in the name or other special regular-expression characters
-# , i.e. avoid characters like: / \ ^ $ .
+# for example "Univ of Wisconsin".
 ORGNAME="zsebenik"
 
 # Set CONDORADMIN to be the email address of the Condor Administrator
@@ -21,13 +19,11 @@ POOL=127.0.0.1
 # is located.
 VIEWDIR="/home/sebenik/Projects/www/condor_view"
 
-# Set STATSDIR to be the _directory_ which contains the condor_stats
-# binary.
+# Set STATSDIR to be the _directory_ which contains the condor_stats binary.
 STATSDIR="/usr/bin"
 
 # Set PATH so it includes the directories which contain awk, bc, 
-# sed, date, and condor_stats.  If you have perl installed, 
-# set the path to include the directory with perl as well.
+# sed, date, and condor_stats.
 PATH=/bin:/usr/bin:$STATSDIR:/s/std/bin
 
 ########### END OF CUSTOMIZATION #######################
@@ -39,6 +35,7 @@ export VIEWDIR
 export PATH
 
 cd $VIEWDIR
+mkdir -p data/{machine,user}
 
 if [ $# -eq 0 ]; then
 	./make_machine_stats hour
@@ -54,5 +51,8 @@ else
 	./make_user_stats $*
 fi
 
-. ./test
+VIEWDIR=${VIEWDIR//[\/]/\\/}
+sed "s/VIEWDIR/$VIEWDIR/g" cronentries.skel >cronentries
+. ./make_page
+
 exit 0
